@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <!-- Set Counter -->
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="10dip" >
+
+        <TextView
+            android:id="@+id/set_completed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/completed_sets"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/set_count_label"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:text="@string/set_count"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical" >
+
+        <!-- Time Selection -->
+        <Spinner
+            android:id="@+id/set_spinner"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Total Time Progress Bar -->
+        <ProgressBar
+            android:id="@+id/set_progressbar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:progressDrawable="@drawable/progressbar" />
+    </LinearLayout>
+
+    <!-- Set Info Text Area -->
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="10dip" >
+
+        <TextView
+            android:id="@+id/set_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="40dip"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/repetition_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dip"
+            android:textSize="20sp" />
+        
+        <TextView
+            android:id="@+id/time_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="15dip"
+            android:textSize="20sp" />
+        
+    </LinearLayout>
+
+    <!-- Current Active/Passive Progress Bar -->
+    <ProgressBar
+        android:id="@+id/current_progressbar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:progressDrawable="@drawable/progressbar" />
+
+    <!-- Start/Stop Set Button -->
+    <Button
+        android:id="@+id/set_start"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:text="@string/progress_start" />
+
+</LinearLayout>

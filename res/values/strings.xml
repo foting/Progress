@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Progress</string>
+    <string name="title_activity_progress">Progress</string>
+    
+    <string name="progress_start">Start</string>
+    <string name="completed_sets">Sets completed this session: </string>
+    <string name="set_count">None</string>
+    
+    <string name="menu_toggle_vibrate">Vibration</string>
+    <string name="menu_remove_set">Remove Current Set</string>
+    <string name="menu_add_set">Add New Set</string>
+    <string name="menu_help_info">How-To &amp; App Info</string>
+    
+    <string name="dialog_set_number">Add</string>
+    <string name="dialog_close">Close</string>
+    <string name="dialog_picker_title">Add a new set</string>
+    <string name="dialog_picker_div">/</string>
+    <string name="dialog_picker_reps">x</string>
+    
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_help_info_title">How-To &amp; App Info</string>
+    
+    <string name="text_info_title"><b><u>App Info</u></b></string>
+    <string name="text_info">Progress is designed to be an aid while performing any physical exercise consisting of repeated 
+        transitions between being active and passive for preset amounts of time. 
+        \n\n
+        Such exercises could include basically anything where the goal is to contract a muscle for an amount of time, let it relax for an amount of time, and then repeat (like e.g. Kegel exercises). 
+        \n\n
+        It could also be used while doing e.g. yoga if you want to keep a certain posture for an amount 
+        of time and then give yourself some time to change into another posture.</string>
+        
+    <string name="text_help_title"><b><u>How-To</u></b></string>
+    <string name="text_help">Progress is run by selecting a set in the drop-down menu above the progress bar on the top half of
+        the screen and then pressing the start button at the bottom. When pressed, the start button changes into a stop button which can be used to abort a currently running set.
+        \n\n
+        A set in Progress is defined as one active part and one passive part running for a number of repetitions.
+        While running, the state of the whole set is visualized by the progress bar at the top of the screen.
+        The lighter color shows the amount of active time spent and the darker color shows the amount of passive time spent.
+        The uncolored part of the progress bar indicates how much is left until the whole set is complete.
+        \n\n
+        The progress bar at the bottom of the screen visualizes the state of the current repetition.
+        While on the active part of a repetition, the darker color quickly fills the bar from left to right and then the lighter color follows, indicating the state of the active part.
+        Upon completing the active part of a repetition the app transitions into the passive part, where the lighter color quickly empties from the progress bar and the darker color
+        follows, indicating the state of the passive part. When the progress bar is once again empty the passive part of the repetition is completed and so is the current repetition.
+        Progress now continues with the active part of the next repetition.
+        \n\n
+        When transitioning between active and passive, and vice versa, a short vibration is activated, and upon completing a whole set there are two short vibrations.
+        This can be turned off/on from the app menu, regardless of whether a set is currently running or not. 
+        \n\n
+        From the app menu you also have the ability to define a new set, or to remove the currently selected set. The syntax of a set is \"Active/Passive xRepetitions\",
+        so for example the first set selected when you open Progress, \"10/5 x10\", has a 10 second active part followed by a 5 second passive part and goes on for 10 repetitions.
+        </string>
+        
+    
+
+</resources>
