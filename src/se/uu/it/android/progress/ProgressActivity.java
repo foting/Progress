@@ -1,12 +1,7 @@
 package se.uu.it.android.progress;
 
 import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -66,14 +61,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 
 	protected PowerManager pm;
 	protected PowerManager.WakeLock wl;
-	
-	// Notifications
-    protected Notification.Builder mBuilder;
-    protected Intent resultIntent;
-    protected PendingIntent resultPendingIntent;
-    protected TaskStackBuilder stackBuilder;
-    protected NotificationManager mNotificationManager;
-
 
 	/** Called when the activity is first created. */
 	@Override
@@ -106,9 +93,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 
 		// Setup Vibrator
 		v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-
-		// Create persistent app notification
-		createNotification();
 		
 		// Set the initial set values
 		setCount(0);
@@ -170,46 +154,9 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	@Override
     public void onDestroy() {
 		super.onDestroy();
-		Log.i(this.getClass().getSimpleName(), "onDestroy called");
-		
-		if(!inProgress) {
-			if(activeTimer != null) {
-				activeTimer.cancel();
-			}
-			if(passiveTimer != null) {
-				passiveTimer.cancel();
-			}
-		}
-		
-        // Cancel the persistent notification.
-        mNotificationManager.cancel("Progress", 0);
+		Log.i(this.getClass().getSimpleName(), "onDestroy called");		
     }
-	
-	public void createNotification() {
 		
-		Log.i(this.getClass().getSimpleName(), "createNotification called");
-	    
-		mBuilder =
-	            new Notification.Builder(this)
-	            .setSmallIcon(R.drawable.ic_launcher)
-	            .setContentTitle("Progress")
-	            .setOngoing(true);
-	    
-	    resultIntent = new Intent(this, ProgressActivity.class);
-	    resultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-	    resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-	    mBuilder.setContentIntent(resultPendingIntent);
-	    mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-	    mNotificationManager.notify("Progress", 0, mBuilder.build());
-	}
-	
-	public void updateNotification() {
-		mBuilder.setContentText(setDescriptionLabel.getText())
-				.setContentInfo("Rep: 0/" + setRepetitions)
-				.setProgress(setSteps, 0, false);
-		mNotificationManager.notify("Progress", 0, mBuilder.build());
-	}
-	
 	/** Methods **/
 
 	/**
@@ -245,8 +192,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 		setDescriptionLabel.setText("Set: " + String.valueOf(activeTime) + "/" + String.valueOf(passiveTime) + " x" + String.valueOf(setRepetitions));
 		repetitionCountLabel.setText("Completed repetitions: " + String.valueOf(repetitionCount));
 		timeLabel.setText("0.0 / " + setDuration / 1000 + " s");
-		
-		updateNotification();
 	}
 
 	/**
@@ -275,10 +220,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 				setProgressBar.incrementSecondaryProgressBy(lastTick - (int) millisUntilFinished);
 				lastTick = (int) millisUntilFinished;
 				timeLabel.setText(String.format("%.1f", (float) (System.currentTimeMillis() - startTime) / 1000) + " / " + setTime + " s");
-				
-				mBuilder.setProgress(activeDuration, currentProgressBar.getProgress(), false);
-				mNotificationManager.notify("Progress", 0, mBuilder.build());
-				
 			}
 
 			@Override
@@ -305,10 +246,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 				setProgressBar.incrementSecondaryProgressBy(lastTick - (int) millisUntilFinished);
 				lastTick = (int) millisUntilFinished;
 				timeLabel.setText(String.format("%.1f", (float) (System.currentTimeMillis() - startTime) / 1000) + " / " + setTime + " s");
-				
-				mBuilder.setProgress(passiveDuration, currentProgressBar.getSecondaryProgress(), false);
-				mNotificationManager.notify("Progress", 0, mBuilder.build());
-				
 			}
 
 			@Override
@@ -331,11 +268,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 					repetitionCount = 0;
 					setSpinner.setEnabled(true);
 					startSet.setText("Start");
-					
-					mBuilder.setContentText(setDescriptionLabel.getText())
-							.setContentInfo("Rep: " + setRepetitions + "/" + setRepetitions)
-							.setProgress(passiveDuration, currentProgressBar.getSecondaryProgress(), false);
-					mNotificationManager.notify("Progress", 0, mBuilder.build());
 
 					if (vibratorToggled)
 						v.vibrate(vibratePattern, -1);
@@ -347,10 +279,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 					currentProgressBar.setSecondaryProgress(0);
 					lastTick = passiveDuration;
 					timeLabel.setText(String.format("%.1f", (float) (System.currentTimeMillis() - startTime) / 1000) + " / " + setTime + " s");
-
-					mBuilder.setContentInfo("Rep: " + (repetitionCount + 1) + "/" + setRepetitions)
-							.setProgress(activeDuration, currentProgressBar.getProgress(), false);
-					mNotificationManager.notify("Progress", 0, mBuilder.build());
 					
 					if (vibratorToggled)
 						v.vibrate(vibrateShort);
@@ -369,8 +297,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 		repetitionCountLabel.setText("Completed repetitions: " + String.valueOf(repetitionCount));
 		startSet.setText("Stop");
 		inProgress = true;
-		
-		mBuilder.setContentInfo("Rep: " + (repetitionCount + 1) + "/" + setRepetitions);
 		
 		getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		wl.acquire();
@@ -392,8 +318,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 
 		getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		wl.release();
-		mBuilder.setContentText(setDescriptionLabel.getText() + " (stopped)");
-		mNotificationManager.notify("Progress", 0, mBuilder.build());
 
 		currentProgressBar.setMax(activeDuration);
 		currentProgressBar.setProgress(0);
