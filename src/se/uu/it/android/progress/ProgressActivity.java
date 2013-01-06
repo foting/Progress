@@ -78,6 +78,9 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		
+		Log.i(this.getClass().getSimpleName(), "onCreate called");
+		
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_progress);
 		
@@ -129,20 +132,71 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	}
 	
 	@Override
+	public void onStart() {
+		super.onStart();
+		Log.i(this.getClass().getSimpleName(), "onStart called");
+	}
+	
+	@Override
+	public void onResume() {
+		super.onResume();
+		Log.i(this.getClass().getSimpleName(), "onResume called");
+	}
+	
+	@Override
+	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		super.onRestoreInstanceState(savedInstanceState);
+		Log.i(this.getClass().getSimpleName(), "onRestoreInstanceState called");
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		Log.i(this.getClass().getSimpleName(), "onSaveInstanceState called");
+	}
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		Log.i(this.getClass().getSimpleName(), "onPause called");
+	}
+	
+	@Override
+    public void onStop() {        
+        super.onStop();
+        Log.i(this.getClass().getSimpleName(), "onStop called");
+    }
+    
+	@Override
     public void onDestroy() {
 		super.onDestroy();
+		Log.i(this.getClass().getSimpleName(), "onDestroy called");
+		
+		if(!inProgress) {
+			if(activeTimer != null) {
+				activeTimer.cancel();
+			}
+			if(passiveTimer != null) {
+				passiveTimer.cancel();
+			}
+		}
+		
         // Cancel the persistent notification.
-        mNotificationManager.cancel("Progress", 0); 
+        mNotificationManager.cancel("Progress", 0);
     }
 	
 	public void createNotification() {
-	    mBuilder =
+		
+		Log.i(this.getClass().getSimpleName(), "createNotification called");
+	    
+		mBuilder =
 	            new Notification.Builder(this)
 	            .setSmallIcon(R.drawable.ic_launcher)
 	            .setContentTitle("Progress")
 	            .setOngoing(true);
 	    
 	    resultIntent = new Intent(this, ProgressActivity.class);
+	    resultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 	    resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 	    mBuilder.setContentIntent(resultPendingIntent);
 	    mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -209,6 +263,8 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	 */
 	public void startSet() {
 
+		Log.i(this.getClass().getSimpleName(), "startSet called");
+		
 		activeTimer = new CountDownTimer(activeDuration, stepResolution) {
 			int lastTick = activeDuration;
 			@Override
@@ -324,6 +380,9 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	 * Stop the timer
 	 */
 	public void stopSet() {
+		
+		Log.i(this.getClass().getSimpleName(), "stopSet called");
+		
 		if(activeTimer != null) {
 			activeTimer.cancel();
 		}
@@ -430,7 +489,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	
 	@Override
 	public void onNumberSet(int number) {
-        Log.d(ProgressActivity.class.getSimpleName(), "Number selected: " + number);
+        Log.i(ProgressActivity.class.getSimpleName(), "Number selected: " + number);
         addSet(number);
     }
 	
