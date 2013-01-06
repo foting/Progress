@@ -1,43 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:gravity="center"
     android:orientation="horizontal"
     android:padding="10dip" >
 
-    <NumberPicker
-        android:id="@+id/active_picker"
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="wrap_content"
-        android:layout_height="fill_parent"
-        android:layout_weight="3" />
-    
-    <TextView
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="0dip" >
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:layout_weight="1"
             android:gravity="center"
-            android:text="@string/dialog_picker_div"
-            android:textSize="20sp" />
-    
-    <NumberPicker
-        android:id="@+id/passive_picker"
+            android:text="@string/dialog_active_picker"
+            android:textSize="13sp" />
+
+        <NumberPicker
+            android:id="@+id/active_picker"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent" />
+    </LinearLayout>
+
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
-        android:layout_weight="3" />
-    
-    <TextView
+        android:layout_weight="1"
+        android:gravity="center"
+        android:paddingTop="20sp"
+        android:text="@string/dialog_picker_div"
+        android:textSize="20sp" />
+
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="0dip" >
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:layout_weight="1"
             android:gravity="center"
-            android:text="@string/dialog_picker_reps"
-            android:textSize="20sp" />
-    
-    <NumberPicker
-        android:id="@+id/repetition_picker"
+            android:text="@string/dialog_passive_picker"
+            android:textSize="13sp" />
+
+        <NumberPicker
+            android:id="@+id/passive_picker"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent" />
+    </LinearLayout>
+
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
-        android:layout_weight="3" />
+        android:layout_weight="1"
+        android:gravity="center"
+        android:paddingTop="20sp"
+        android:text="@string/dialog_picker_reps"
+        android:textSize="20sp" />
+
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="0dip" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:gravity="center"
+            android:text="@string/dialog_repetitions_picker"
+            android:textSize="13sp" />
+
+        <NumberPicker
+            android:id="@+id/repetition_picker"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent" />
+    </LinearLayout>
 
 </LinearLayout>

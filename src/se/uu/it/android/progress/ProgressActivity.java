@@ -1,19 +1,19 @@
 package se.uu.it.android.progress;
 
+import se.uu.it.android.progress.ProgressService.ProgressBinder;
 import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.Vibrator;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -35,10 +35,21 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	protected TextView setDescriptionLabel;
 	protected TextView timeLabel;
 	protected Spinner setSpinner;
+	protected ProgressBar currentProgressBar;
+	protected ProgressBar setProgressBar;
 	protected SetData setData;
 	protected Vibrator v;
-
-	protected boolean vibratorToggled = true;
+	protected SharedPreferences prefs;
+	protected SharedPreferences.Editor prefEditor;
+	
+	protected CountDownTimer activeTimer;
+	protected CountDownTimer passiveTimer;
+	
+	protected ProgressService mService;
+	
+	protected boolean mServiceBound = false;
+	protected boolean firstAppStart;
+	protected boolean vibratorToggled;
 	protected long[] vibratePattern = {0, 200, 100, 200};
 	protected long vibrateShort = 70;
 	protected long startTime = 0;
@@ -47,15 +58,12 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	protected int passiveTime = 0;
 	protected int[] customSet = {0, 0, 0};
 	protected int customNumberCount = 0;
-	protected CountDownTimer activeTimer;
-	protected CountDownTimer passiveTimer;
 	protected int repetitionCount = 0;
 	protected int setRepetitions = 0;
 	protected int setCount = 0;
 	protected boolean inProgress = false;
 
-	protected ProgressBar currentProgressBar;
-	protected ProgressBar setProgressBar;
+	
 	protected int activeDuration = activeTime * 1000; 	// (milliseconds)
 	protected int passiveDuration = passiveTime * 1000; 	// (milliseconds)
 	protected int setDuration = setTime * 1000; 	// (milliseconds)
@@ -66,26 +74,19 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 
 	protected PowerManager pm;
 	protected PowerManager.WakeLock wl;
-	
-	// Notifications
-    protected Notification.Builder mBuilder;
-    protected Intent resultIntent;
-    protected PendingIntent resultPendingIntent;
-    protected TaskStackBuilder stackBuilder;
-    protected NotificationManager mNotificationManager;
-
 
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		
-		Log.i(this.getClass().getSimpleName(), "onCreate called");
-		
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_progress);
 		
 		// Lock orientation to standard orientation (portrait for mobiles, landscape for tablets)
 		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
+		
+		// Get preferences and initialize editor
+		prefs = getPreferences(0);
+		prefEditor = prefs.edit();
 
 		// Connect interface elements to properties
 		startSet = (Button) findViewById(R.id.set_start);
@@ -106,13 +107,10 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 
 		// Setup Vibrator
 		v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-
-		// Create persistent app notification
-		createNotification();
+		vibratorToggled = prefs.getBoolean("vibratorToggled", true);
 		
-		// Set the initial set values
+		// Initialize set count
 		setCount(0);
-		setTime(10, 1, 1);
 
 		// Setup wakelock
 		pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -128,96 +126,92 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 
 		// Load and populate setSpinner with sets from setData
 		loadSetData();
-
+		
+		// Show HelpInfoDialog if this is the first time the app is opened, and disable it for future startups
+		firstAppStart = prefs.getBoolean("firstAppStart", true);
+		if(firstAppStart) {
+			showHelpInfoDialog();
+			prefEditor.putBoolean("firstAppStart", false);
+		}
+		
 	}
 	
 	@Override
 	public void onStart() {
 		super.onStart();
-		Log.i(this.getClass().getSimpleName(), "onStart called");
+		
+		// Bind to ProgressService
+		Intent intent = new Intent(this, ProgressService.class);
+		bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 	}
 	
 	@Override
 	public void onResume() {
 		super.onResume();
-		Log.i(this.getClass().getSimpleName(), "onResume called");
 	}
 	
 	@Override
 	public void onRestoreInstanceState(Bundle savedInstanceState) {
 		super.onRestoreInstanceState(savedInstanceState);
-		Log.i(this.getClass().getSimpleName(), "onRestoreInstanceState called");
 	}
 	
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		Log.i(this.getClass().getSimpleName(), "onSaveInstanceState called");
 	}
 	
 	@Override
 	public void onPause() {
 		super.onPause();
-		Log.i(this.getClass().getSimpleName(), "onPause called");
 	}
 	
 	@Override
-    public void onStop() {        
+    public void onStop() { 
         super.onStop();
-        Log.i(this.getClass().getSimpleName(), "onStop called");
+        
+        // Unbind from the service
+        if (mServiceBound) {
+            unbindService(mConnection);
+            mServiceBound = false;
+        }
+        
+        // Commit changes to SharedPreferences
+        prefEditor.commit();
     }
     
 	@Override
     public void onDestroy() {
-		super.onDestroy();
-		Log.i(this.getClass().getSimpleName(), "onDestroy called");
-		
-		if(!inProgress) {
-			if(activeTimer != null) {
-				activeTimer.cancel();
-			}
-			if(passiveTimer != null) {
-				passiveTimer.cancel();
-			}
-		}
-		
-        // Cancel the persistent notification.
-        mNotificationManager.cancel("Progress", 0);
+		super.onDestroy();		
     }
 	
-	public void createNotification() {
+	/** Defines callbacks for service binding, passed to bindService() */
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            ProgressBinder binder = (ProgressBinder) service;
+            mService = binder.getService();
+            mServiceBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mServiceBound = false;
+        }
+    };
 		
-		Log.i(this.getClass().getSimpleName(), "createNotification called");
-	    
-		mBuilder =
-	            new Notification.Builder(this)
-	            .setSmallIcon(R.drawable.ic_launcher)
-	            .setContentTitle("Progress")
-	            .setOngoing(true);
-	    
-	    resultIntent = new Intent(this, ProgressActivity.class);
-	    resultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-	    resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-	    mBuilder.setContentIntent(resultPendingIntent);
-	    mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-	    mNotificationManager.notify("Progress", 0, mBuilder.build());
-	}
-	
-	public void updateNotification() {
-		mBuilder.setContentText(setDescriptionLabel.getText())
-				.setContentInfo("Rep: 0/" + setRepetitions)
-				.setProgress(setSteps, 0, false);
-		mNotificationManager.notify("Progress", 0, mBuilder.build());
-	}
-	
 	/** Methods **/
 
 	/**
-	 * Set an absolute value for the number of minutes to brew. Has no effect if a brew
-	 * is currently running.
-	 * @param seconds The number of seconds to brew.
+	 * Setup variables and interface objects to match a selected set.
+	 * @param active The number of seconds for each active state.
+	 * @param passive The number of seconds for each passive state.
+	 * @param repetitions The numbers of repetitions in the set.
 	 */
 	public void setTime(int active, int passive, int repetitions) {
+		// Do nothing if called while already running a set (should never happen)
 		if(inProgress)
 			return;
 
@@ -246,7 +240,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 		repetitionCountLabel.setText("Completed repetitions: " + String.valueOf(repetitionCount));
 		timeLabel.setText("0.0 / " + setDuration / 1000 + " s");
 		
-		updateNotification();
+		mService.updateNotification(setDescriptionLabel.getText(), setRepetitions, setSteps);
 	}
 
 	/**
@@ -262,9 +256,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	 * Start the timer
 	 */
 	public void startSet() {
-
-		Log.i(this.getClass().getSimpleName(), "startSet called");
-		
 		activeTimer = new CountDownTimer(activeDuration, stepResolution) {
 			int lastTick = activeDuration;
 			@Override
@@ -276,9 +267,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 				lastTick = (int) millisUntilFinished;
 				timeLabel.setText(String.format("%.1f", (float) (System.currentTimeMillis() - startTime) / 1000) + " / " + setTime + " s");
 				
-				mBuilder.setProgress(activeDuration, currentProgressBar.getProgress(), false);
-				mNotificationManager.notify("Progress", 0, mBuilder.build());
-				
+				mService.updateNotification(activeDuration, currentProgressBar.getProgress());
 			}
 
 			@Override
@@ -306,9 +295,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 				lastTick = (int) millisUntilFinished;
 				timeLabel.setText(String.format("%.1f", (float) (System.currentTimeMillis() - startTime) / 1000) + " / " + setTime + " s");
 				
-				mBuilder.setProgress(passiveDuration, currentProgressBar.getSecondaryProgress(), false);
-				mNotificationManager.notify("Progress", 0, mBuilder.build());
-				
+				mService.updateNotification(activeDuration, currentProgressBar.getProgress());
 			}
 
 			@Override
@@ -332,10 +319,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 					setSpinner.setEnabled(true);
 					startSet.setText("Start");
 					
-					mBuilder.setContentText(setDescriptionLabel.getText())
-							.setContentInfo("Rep: " + setRepetitions + "/" + setRepetitions)
-							.setProgress(passiveDuration, currentProgressBar.getSecondaryProgress(), false);
-					mNotificationManager.notify("Progress", 0, mBuilder.build());
+					mService.updateNotification(setDescriptionLabel.getText(), setRepetitions, passiveDuration, currentProgressBar.getSecondaryProgress());
 
 					if (vibratorToggled)
 						v.vibrate(vibratePattern, -1);
@@ -347,10 +331,8 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 					currentProgressBar.setSecondaryProgress(0);
 					lastTick = passiveDuration;
 					timeLabel.setText(String.format("%.1f", (float) (System.currentTimeMillis() - startTime) / 1000) + " / " + setTime + " s");
-
-					mBuilder.setContentInfo("Rep: " + (repetitionCount + 1) + "/" + setRepetitions)
-							.setProgress(activeDuration, currentProgressBar.getProgress(), false);
-					mNotificationManager.notify("Progress", 0, mBuilder.build());
+					
+					mService.updateNotification(repetitionCount, setRepetitions, activeDuration, currentProgressBar.getProgress());
 					
 					if (vibratorToggled)
 						v.vibrate(vibrateShort);
@@ -370,8 +352,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 		startSet.setText("Stop");
 		inProgress = true;
 		
-		mBuilder.setContentInfo("Rep: " + (repetitionCount + 1) + "/" + setRepetitions);
-		
 		getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		wl.acquire();
 	}
@@ -380,9 +360,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	 * Stop the timer
 	 */
 	public void stopSet() {
-		
-		Log.i(this.getClass().getSimpleName(), "stopSet called");
-		
 		if(activeTimer != null) {
 			activeTimer.cancel();
 		}
@@ -392,8 +369,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 
 		getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		wl.release();
-		mBuilder.setContentText(setDescriptionLabel.getText() + " (stopped)");
-		mNotificationManager.notify("Progress", 0, mBuilder.build());
 
 		currentProgressBar.setMax(activeDuration);
 		currentProgressBar.setProgress(0);
@@ -456,13 +431,14 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.menu_progress_activity, menu);
+		menu.getItem(0).setChecked(vibratorToggled);
 		return true;
 	}
 	
-	// Deactivate menu items for creating new set and removing current set while the app is running a set.
 	@Override
-	public boolean onPrepareOptionsMenu (Menu menu) {
-	    if (inProgress)	{
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		// Deactivate menu items for creating new set and removing current set while the app is running a set.
+		if (inProgress)	{
 	    	menu.getItem(1).setEnabled(false);
 	    	menu.getItem(2).setEnabled(false);
 	    } else {
@@ -472,9 +448,9 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	    return true;
 	}
 	
-	// If the Custom Set menu option is chosen, open a CustomSetDialog
 	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
+		// If the Custom Set menu option is chosen, open a CustomSetDialog
         if (item.getItemId() == R.id.menu_dialog_item) {
             CustomSetDialog dialog = new CustomSetDialog(this, 4, 10, 5, 10);
             dialog.setTitle(getString(R.string.dialog_picker_title));
@@ -489,7 +465,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	
 	@Override
 	public void onNumberSet(int number) {
-        Log.i(ProgressActivity.class.getSimpleName(), "Number selected: " + number);
         addSet(number);
     }
 	
@@ -508,9 +483,13 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	}
 	
 	public void showHelpInfoDialog(MenuItem item) {
-            HelpInfoDialog dialog = new HelpInfoDialog(this, 4);
-            dialog.setTitle(getString(R.string.dialog_help_info_title));
-            dialog.show();
+            showHelpInfoDialog();
+	}
+	
+	public void showHelpInfoDialog() {
+        HelpInfoDialog dialog = new HelpInfoDialog(this, 4);
+        dialog.setTitle(getString(R.string.dialog_help_info_title));
+        dialog.show();
 	}
 	
 	// Remove currently selected set in setSpinner, reload setData to the setSpinner
@@ -519,6 +498,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 		loadSetData();
 	}
 
+	// Toggle vibration on/off
 	public void toggleVibrate(MenuItem item) {
 		if (item.isChecked()) {
 			item.setChecked(false);
@@ -527,5 +507,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 			item.setChecked(true);
 			vibratorToggled = true;
 		}
+		prefEditor.putBoolean("vibratorToggled", vibratorToggled);
 	}
 }

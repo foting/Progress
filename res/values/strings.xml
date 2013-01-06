@@ -18,6 +18,9 @@
     <string name="dialog_picker_title">Add a new set</string>
     <string name="dialog_picker_div">/</string>
     <string name="dialog_picker_reps">x</string>
+    <string name="dialog_active_picker">Active</string>
+    <string name="dialog_passive_picker">Passive</string>
+    <string name="dialog_repetitions_picker">Repetitions</string>
     
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_help_info_title">How-To &amp; App Info</string>

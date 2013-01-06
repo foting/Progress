@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="se.uu.it.android.progress"
-    android:versionCode="3"
-    android:versionName="1.2" >
+    android:versionCode="5"
+    android:versionName="1.3d" >
 
     <uses-sdk
         android:minSdkVersion="16"
@@ -25,6 +25,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".ProgressService"
+            android:exported="false" />
     </application>
 
 </manifest>
