@@ -2,6 +2,7 @@ package se.uu.it.android.progress;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -32,8 +33,10 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	protected Spinner setSpinner;
 	protected SetData setData;
 	protected Vibrator v;
-
-	protected boolean vibratorToggled = true;
+	protected SharedPreferences prefs;
+	protected SharedPreferences.Editor prefEditor;
+	
+	protected boolean vibratorToggled;
 	protected long[] vibratePattern = {0, 200, 100, 200};
 	protected long vibrateShort = 70;
 	protected long startTime = 0;
@@ -65,14 +68,18 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 		
 		Log.i(this.getClass().getSimpleName(), "onCreate called");
 		
-		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_progress);
 		
 		// Lock orientation to standard orientation (portrait for mobiles, landscape for tablets)
 		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
+		
+		// Get preferences and initialize editor
+		prefs = getPreferences(0);
+		prefEditor = prefs.edit();
 
 		// Connect interface elements to properties
 		startSet = (Button) findViewById(R.id.set_start);
@@ -93,10 +100,10 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 
 		// Setup Vibrator
 		v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+		vibratorToggled = prefs.getBoolean("vibratorToggled", true);
 		
-		// Set the initial set values
+		// Initialize set count
 		setCount(0);
-		setTime(10, 1, 1);
 
 		// Setup wakelock
 		pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -146,9 +153,12 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	}
 	
 	@Override
-    public void onStop() {        
+    public void onStop() { 
         super.onStop();
         Log.i(this.getClass().getSimpleName(), "onStop called");
+        
+        // Commit changes to SharedPreferences
+        prefEditor.commit();
     }
     
 	@Override
@@ -380,13 +390,14 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.menu_progress_activity, menu);
+		menu.getItem(0).setChecked(vibratorToggled);
 		return true;
 	}
 	
-	// Deactivate menu items for creating new set and removing current set while the app is running a set.
 	@Override
 	public boolean onPrepareOptionsMenu (Menu menu) {
-	    if (inProgress)	{
+		// Deactivate menu items for creating new set and removing current set while the app is running a set.
+		if (inProgress)	{
 	    	menu.getItem(1).setEnabled(false);
 	    	menu.getItem(2).setEnabled(false);
 	    } else {
@@ -396,9 +407,9 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	    return true;
 	}
 	
-	// If the Custom Set menu option is chosen, open a CustomSetDialog
 	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
+		// If the Custom Set menu option is chosen, open a CustomSetDialog
         if (item.getItemId() == R.id.menu_dialog_item) {
             CustomSetDialog dialog = new CustomSetDialog(this, 4, 10, 5, 10);
             dialog.setTitle(getString(R.string.dialog_picker_title));
@@ -443,6 +454,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 		loadSetData();
 	}
 
+	// Toggle vibration on/off
 	public void toggleVibrate(MenuItem item) {
 		if (item.isChecked()) {
 			item.setChecked(false);
@@ -451,5 +463,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 			item.setChecked(true);
 			vibratorToggled = true;
 		}
+		prefEditor.putBoolean("vibratorToggled", vibratorToggled);
 	}
 }
