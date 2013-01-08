@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.PowerManager;
 import android.os.Vibrator;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -70,9 +69,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		Log.i(this.getClass().getSimpleName(), "onCreate called");
-		
 		setContentView(R.layout.activity_progress);
 		
 		// Lock orientation to standard orientation (portrait for mobiles, landscape for tablets)
@@ -133,37 +129,31 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	@Override
 	public void onStart() {
 		super.onStart();
-		Log.i(this.getClass().getSimpleName(), "onStart called");
 	}
 	
 	@Override
 	public void onResume() {
 		super.onResume();
-		Log.i(this.getClass().getSimpleName(), "onResume called");
 	}
 	
 	@Override
 	public void onRestoreInstanceState(Bundle savedInstanceState) {
 		super.onRestoreInstanceState(savedInstanceState);
-		Log.i(this.getClass().getSimpleName(), "onRestoreInstanceState called");
 	}
 	
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		Log.i(this.getClass().getSimpleName(), "onSaveInstanceState called");
 	}
 	
 	@Override
 	public void onPause() {
 		super.onPause();
-		Log.i(this.getClass().getSimpleName(), "onPause called");
 	}
 	
 	@Override
     public void onStop() { 
         super.onStop();
-        Log.i(this.getClass().getSimpleName(), "onStop called");
         
         // Commit changes to SharedPreferences
         prefEditor.commit();
@@ -171,8 +161,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
     
 	@Override
     public void onDestroy() {
-		super.onDestroy();
-		Log.i(this.getClass().getSimpleName(), "onDestroy called");		
+		super.onDestroy();		
     }
 		
 	/** Methods **/
@@ -225,9 +214,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	 * Start the timer
 	 */
 	public void startSet() {
-
-		Log.i(this.getClass().getSimpleName(), "startSet called");
-		
 		activeTimer = new CountDownTimer(activeDuration, stepResolution) {
 			int lastTick = activeDuration;
 			@Override
@@ -324,9 +310,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	 * Stop the timer
 	 */
 	public void stopSet() {
-		
-		Log.i(this.getClass().getSimpleName(), "stopSet called");
-		
 		if(activeTimer != null) {
 			activeTimer.cancel();
 		}
@@ -432,7 +415,6 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	
 	@Override
 	public void onNumberSet(int number) {
-        Log.i(ProgressActivity.class.getSimpleName(), "Number selected: " + number);
         addSet(number);
     }
 	
