@@ -36,6 +36,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	protected SharedPreferences prefs;
 	protected SharedPreferences.Editor prefEditor;
 	
+	protected boolean firstAppStart;
 	protected boolean vibratorToggled;
 	protected long[] vibratePattern = {0, 200, 100, 200};
 	protected long vibrateShort = 70;
@@ -119,7 +120,14 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 
 		// Load and populate setSpinner with sets from setData
 		loadSetData();
-
+		
+		// Show HelpInfoDialog if this is the first time the app is opened, and disable it for future startups
+		firstAppStart = prefs.getBoolean("firstAppStart", true);
+		if(firstAppStart) {
+			showHelpInfoDialog();
+			prefEditor.putBoolean("firstAppStart", false);
+		}
+		
 	}
 	
 	@Override
@@ -395,7 +403,7 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	}
 	
 	@Override
-	public boolean onPrepareOptionsMenu (Menu menu) {
+	public boolean onPrepareOptionsMenu(Menu menu) {
 		// Deactivate menu items for creating new set and removing current set while the app is running a set.
 		if (inProgress)	{
 	    	menu.getItem(1).setEnabled(false);
@@ -443,9 +451,13 @@ public class ProgressActivity extends Activity implements OnClickListener, OnIte
 	}
 	
 	public void showHelpInfoDialog(MenuItem item) {
-            HelpInfoDialog dialog = new HelpInfoDialog(this, 4);
-            dialog.setTitle(getString(R.string.dialog_help_info_title));
-            dialog.show();
+            showHelpInfoDialog();
+	}
+	
+	public void showHelpInfoDialog() {
+        HelpInfoDialog dialog = new HelpInfoDialog(this, 4);
+        dialog.setTitle(getString(R.string.dialog_help_info_title));
+        dialog.show();
 	}
 	
 	// Remove currently selected set in setSpinner, reload setData to the setSpinner
